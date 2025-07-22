@@ -1,6 +1,24 @@
 name: Build the flutter version of the RustDesk
 
 on:
+  workflow_dispatch:
+    inputs:
+      rename:
+        description: 'rename to'
+        required: false
+      key:
+        description: 'public key'
+        required: false
+      host:
+        description: 'host'
+        required: false
+      platforms:
+        description: 'platforms, e.g. windows,macos,linux'
+        default: 'windows,linux,macos'
+        required: false
+      extra-args-for-sciter-windows:
+        description: '--features "virtual-display"'
+        required: false
   workflow_call:
     inputs:
       upload-artifact:
