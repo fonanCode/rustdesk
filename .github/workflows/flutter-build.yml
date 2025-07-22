@@ -1,6 +1,19 @@
 name: Build the flutter version of the RustDesk
 
 on:
+  workflow_dispatch:
+    inputs:
+      rename:
+        description: 'Nom de l"application'
+        required: true
+        default: 'FUSION REMOTE'
+      key:
+        description: 'Votre clé publique'
+        required: true
+      host:
+        description: 'Votre serveur'
+        required: true
+        default: 'fusion-cloud-remote.ddns.net'
   workflow_call:
     inputs:
       upload-artifact:
