@@ -1,0 +1,66 @@
+name: Build Custom Windows Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      rename:
+        description: 'Application Name (e.g., FUSION REMOTE)'
+        required: true
+      key:
+        description: 'Your Public Key'
+        required: true
+      host:
+        description: 'Your Host (e.g., fusion-cloud-remote.ddns.net)'
+        required: true
+
+env:
+  RUSTDESK_NAME: ${{ github.event.inputs.rename }}
+  RUSTDESK_ID_SERVER: ${{ github.event.inputs.host }}
+  RUSTDESK_RELAY_SERVER: ${{ github.event.inputs.host }}
+  RUSTDESK_KEY: ${{ github.event.inputs.key }}
+  VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+  VCPKG_FEATURE_FLAGS: "manifests,versions,binarycaching,registries"
+  VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_cache,readwrite"
+
+jobs:
+  build-windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Setup Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75
+          echo "$HOME/.cargo/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+          cache: true
+
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          key: vcpkg-root-v1
+
+      - name: Setup vcpkg
+        run: |
+          if (-not (Test-Path ${{ env.VCPKG_ROOT }})) { git clone https://github.com/microsoft/vcpkg ${{ env.VCPKG_ROOT }} }
+          else { git -C ${{ env.VCPKG_ROOT }} pull }
+          ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+
+      - name: Run build script
+        run: |
+          cd flutter
+          ./build.bat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-windows-custom
+          path: flutter/build/bundle/
