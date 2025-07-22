@@ -55,7 +55,7 @@ jobs:
         shell: bash
       - name: Build rustdesk
         run: |
-          python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
+          python3 .\build.py --portable --flutter --skip-portable-pack
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
