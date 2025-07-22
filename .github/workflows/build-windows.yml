@@ -55,9 +55,8 @@ jobs:
           ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
 
       - name: Run build script
-        run: |
-          cd flutter
-          ./build.bat
+        working-directory: ./flutter
+        run: ./build.bat
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
