@@ -14,44 +14,21 @@ on:
         description: 'Your Host (e.g., fusion-cloud-remote.ddns.net)'
         required: true
         default: 'fusion-cloud-remote.ddns.net'
-      upload-artifact:
-        description: 'Upload Artifact (should be true)'
-        type: boolean
-        default: true
-      upload-tag:
-        description: 'Release Tag (e.g., nightly)'
-        type: string
-        default: "nightly"
 
 env:
   RUSTDESK_NAME: ${{ github.event.inputs.rename }}
   RUSTDESK_ID_SERVER: ${{ github.event.inputs.host }}
   RUSTDESK_RELAY_SERVER: ${{ github.event.inputs.host }}
   RUSTDESK_KEY: ${{ github.event.inputs.key }}
-  SCITER_RUST_VERSION: "1.75"
-  RUST_VERSION: "1.75"
-  MAC_RUST_VERSION: "1.81"
-  CARGO_NDK_VERSION: "3.1.2"
-  SCITER_ARMV7_CMAKE_VERSION: "3.29.7"
-  SCITER_NASM_DEBVERSION: "2.14-1"
+  VCPKG_COMMIT_ID: "6f29f12e82a8293156836ad81cc9bf5af41fe836"
   LLVM_VERSION: "15.0.6"
   FLUTTER_VERSION: "3.24.5"
-  ANDROID_FLUTTER_VERSION: "3.24.5"
-  FLUTTER_ELINUX_VERSION: "3.16.9"
-  TAG_NAME: "${{ inputs.upload-tag }}"
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-  VCPKG_COMMIT_ID: "6f29f12e82a8293156836ad81cc9bf5af41fe836"
-  VERSION: "1.4.0"
-  NDK_VERSION: "r27c"
-  ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
-  MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
-  UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
-  SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
+  SCITER_RUST_VERSION: "1.75"
 
 jobs:
-  build-for-windows-flutter:
-    name: build-windows-x64
-    runs-on: windows-2022
+  build-windows:
+    name: build-windows-x64-custom
+    runs-on: windows-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -66,11 +43,21 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Setup vcpkg with Github Actions binary cache
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+      - name: Install vcpkg dependencies
+        run: |
+          vcpkg install --triplet x64-windows-static --x-install-root="C:\vcpkg\installed"
+        shell: bash
       - name: Build rustdesk
         run: |
-          python3 .\build.py --portable --hwcodec --flutter --vram
+          python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rustdesk-windows-custom
-          path: target/release/rustdesk.exe
+          name: FUSION-REMOTE-windows
+          path: flutter/build/windows/x64/runner/Release/
